@@ -1,2 +1,4 @@
 Primer codigo de prueba
-Realizar los comabios necesarios
+Realizar los combios necesarios
+Una vez realizado
+volver a realizar un segundo cambio con commit
