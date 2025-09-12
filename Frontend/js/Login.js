@@ -1,7 +1,7 @@
 
 const $submit = document.getElementById("submit"),
   $password = document.getElementById("password"),
-  $username = document.getElementById("username"),
+  $email = document.getElementById("email"),
   $visible = document.getElementById("visible");
 
 document.addEventListener("change", (e)=>{
@@ -13,9 +13,9 @@ document.addEventListener("change", (e)=>{
 
 document.addEventListener("click", (e)=>{
   if(e.target === $submit){
-    if($password.value !== "" && $username.value !== ""){
+    if($password.value !== "" && $email.value !== ""){
       e.preventDefault();
-      window.location.href = "index.html";
+      window.location.href = "dashboard.html";
     }
   }
 })
