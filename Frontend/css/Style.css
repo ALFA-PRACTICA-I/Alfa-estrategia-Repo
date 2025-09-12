@@ -40,7 +40,7 @@ form img{
   align-items: center;
 }
 
-form input[type="email"]{
+form input[type="text"]{
   outline: 0;
   border: 2px solid #ccc;
   border-radius: 4px;
