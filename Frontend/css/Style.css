@@ -11,14 +11,7 @@ body{
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #000080;
-}
-
-form h2{
-  line-height: 2;
-  padding: 0px;
-  font-weight: 500;
-  margin: -60px 0px 0px 0px;
+  background-color: #ccc;
 }
 
 form{
@@ -28,8 +21,10 @@ form{
   justify-self: center;
   align-items: center;
   flex-direction: column;
+  position: relative;
   border-radius: 20px;
   background-color: #fff;
+  box-shadow: 0 0 30px #444e;
 }
 
 form img{
@@ -38,25 +33,23 @@ form img{
   padding: 0px 0px 30px 0px;
   margin: 0 -10px 20px -20px;
   align-items: center;
+  position: relative;
 }
 
-form input[type="text"]{
+form h2{
+  line-height: 2;
+  padding: 0px;
+  font-weight: 500;
+  margin-top: -55px
+}
+
+form input[type="text"],[type="password"]{
   outline: 0;
   border: 2px solid #ccc;
   border-radius: 4px;
-  background: whitesmoke;
+  background: #eee;
   width: 80%;
   padding: 10px;
-}
-
-form input[type="password"]{
-  outline: 0;
-  border: 2px solid #ccc;
-  border-radius: 4px;
-  background: whitesmoke;
-  width: 80%;
-  padding: 10px;
-  margin: 0px 0px 30px 0px;
 }
 
 form label{
@@ -77,11 +70,12 @@ form button{
   outline: 0;
   border: 0;
   background-color: blue;
-  border-radius: 30px;
+  border-radius: 15px;
   cursor: pointer;
-  width: 250px;
-  height: 40px;
-  padding: 0px 20px 3px 20px;
+  width: 80%;
+  height: 35px;
+  position: absolute;
+  bottom: 20px ;
   transition: all .3s ease-in-out;
   text-align: center;
   color: #fff;
@@ -90,5 +84,5 @@ form button{
 }
 
 form button:hover{
-  opacity: .75;
+  opacity: .70;
 }
