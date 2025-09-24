@@ -8,9 +8,7 @@
     <link rel="icon" href="./Imagenes/logo-chico.png">
     <style>
       .plan--item::-webkit-details-marker { display: none; }
-      .plan--item { list-style: none; cursor: pointer; }
-      .plan--item::before { content: '▸'; display: inline-block; width: 1em; margin-right: .5rem; transition: transform .2s; }
-      .nav__details[open] > .plan--item::before { content: '▾'; }
+      .nav__details[open] > .plan--item::after { content: '▾'; }
       .nav__list { margin: 0 0 0 1.5rem; padding: 0; }
     </style>
   </head>
@@ -25,9 +23,10 @@
       </div>
 
       <nav class="nav">
-        <div class="nav__section">?</div>
+        <div class="nav__section"></div>
+          <a class="nav__item icon--dashboard" href="#">Dashboard</a>
         <details class="nav__details">
-            <summary class="nav__item plan--item">Plan Estratégico</summary> 
+            <summary class="nav__item plan--item" justify-content: space-between;>Plan Estratégico</summary> 
                 <ul class="nav__list">
                     <li class="nav__list">
                         <a class="nav__item" href="/Frontend/Liderazgo.html">
@@ -46,12 +45,11 @@
                 </ul>
         </details>
 
-        <div class="nav__section">?</div>
-        <a class="nav__item" href="#">Reportes</a>
+          <a class="nav__item" href="#">Reportes</a>
       </nav>
 
-      <div class="nav__close">
-        <a href="login.html" class="nav__close close--sesion">Cerrar sesion</a>
+      <div class="nav__section">
+        <a href="login.html" class="nav__item close--sesion">Cerrar sesion</a>
       </div>
     </aside>
 
@@ -60,8 +58,8 @@
             <div class="container__img">
                 <img src="/Frontend/Imagenes/Logo_Arzobispo.png" alt="Logo_Arzobispo">
                 <div class="text-content">
-                    <h1 class="container__title">COLEGIO ARZOBISPADO</h1>
-                    <h1 class="container__subtitle">SSMA. CONCEPCIÓN</h1>
+                    <h2 class="container__title">COLEGIO ARZOBISPADO</h2>
+                    <h2 class="container__subtitle">SSMA. CONCEPCIÓN</h2>
                 </div>
             </div>
         </div>
