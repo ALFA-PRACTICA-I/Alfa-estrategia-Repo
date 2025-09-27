@@ -25,16 +25,25 @@ from contextlib import asynccontextmanager
 # Configuración general
 # ==============================
 
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[""],   # solo en desarrollo
+    allow_methods=[""],
+    allow_headers=["*"],
+    allow_credentials=False,
+)
+
 SECRET_KEY = "hola123"   # en prod usa variable de entorno
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
 pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
-print(pwd.hash("hola123"))
+#print(pwd.hash("hola123"))
 
-def verify_password(plain: str, password_hash: str) -> bool:
-    return pwd_context.verify(plain, password_hash)
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
@@ -44,6 +53,12 @@ def create_access_token(data: dict, minutes: int = ACCESS_TOKEN_EXPIRE_MINUTES) 
     to_encode["exp"] = datetime.utcnow() + timedelta(minutes=minutes)
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+def assert_bcrypt_limit(password: str):
+    if len(password.encode("utf-8")) > 72:
+        raise ValueError("La contraseña es demasiado larga para bcrypt (máx 72 bytes)")
+    
+assert_bcrypt_limit("hola123")
+hash = get_password_hash("hola123")
 
 Base = declarative_base()
 
@@ -68,8 +83,8 @@ UPLOAD_DIR = Path("./uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---- Config DB ----
-# Cambia la clave 'ruta' por tu contraseña real, o usa un usuario distinto a root
-DATABASE_URL = "mysql+pymysql://root:ruta@localhost:3306/colegio_db"
+# Cambia la clave '2025' por tu contraseña real en mysql, o usa un usuario distinto a root
+DATABASE_URL = "mysql+pymysql://root:2025@localhost:3306/colegio_db"
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
@@ -156,7 +171,7 @@ class Evidence(EvidenceCreate):
 
 # --- Login schemas ---
 class LoginRequest(BaseModel):
-    username: str
+    rut: str
     password: str
 
 class TokenResponse(BaseModel):
@@ -209,9 +224,8 @@ class EvidenceModel(Base):
 class UserModel(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(190), unique=True, nullable=False, index=True)  # <- antes username
-    email = Column(String(190), unique=True, nullable=False, index=True)
-    password = Column(String(255), nullable=False)                      # <- antes password_hash
+    rut = Column(String(190), unique=True, nullable=False, index=True)  # <- antes username
+    password_hash = Column(String(255), nullable=False)                      # <- antes password_hash
     is_active = Column(Boolean, nullable=False, server_default="1")
     created_at = Column(DateTime, server_default=func.current_timestamp())
 
@@ -417,14 +431,14 @@ from sqlalchemy import select
 @app.post("/auth/login", response_model=TokenResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
     user = db.execute(
-        select(UserModel).where(UserModel.name == payload.username)
+        select(UserModel).where(UserModel.rut == payload.rut)
     ).scalar_one_or_none()
 
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     # La contraseña en DB DEBE ser un hash bcrypt
-    if not verify_password(payload.password, user.password):
+    if not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     # El 'id' no se escribe en el login; aquí solo lo metemos en el token por conveniencia (puedes quitarlo)
@@ -440,5 +454,3 @@ def health():
     return {"status": "ok"}
 
 
-
-    

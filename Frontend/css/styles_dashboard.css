@@ -72,7 +72,7 @@ body {
   padding: 0px 4px 20PX;
 }
 .brand__logo {
-  width: 46px; height: 40px; border-radius: 50%;
+  width: 40px; height: 40px; border-radius: 50%;
   display: grid; place-items: center;
   font-weight: 800; letter-spacing: .5px;
   background-image: url(/Frontend/Imagenes/user.png);
@@ -105,7 +105,6 @@ body {
 .plan--item::after {
 content: '▸';
 display: inline-block;
-text-align: left;
 transition: transform .2s;
 }
 details[open] > .plan--item::after {

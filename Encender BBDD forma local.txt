@@ -1,0 +1,3 @@
+Encender BBDD forma local
+colocar en terminal(de la carpeta donde se ubica el archivo .py) para correr un server local:
+python -m uvicorn seba:app --reload
