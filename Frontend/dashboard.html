@@ -1,24 +1,120 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>home</title>
-    <link rel="stylesheet" href="./css/Style_dashboard.css">
-</head>
-<body>
-    <div class="box-left">
-    <h1></h1>
-    <h5 class="dashboard-titule box2">Dashboard</h5>
-    <h5 class="plan-titule">Plan estrategico</h5>
-    <h5 class="reportes-titule">Reportes</h5>
-    <a href="login.html">Cerrar sesion</a>
-    </div>
-</body>
-<body>
-    <div class="container-top"></div>
-    <div class="subcontainer-top">
-        <img src="https://colegiosarzobispado.cl/wp-content/uploads/2025/07/logo-texto.png" alt="Logo Arzobispo">
-    </div>
-</body>
-</html>
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard – Colegios Arzobispado SSMA</title>
+    <link rel="stylesheet" href="./css/styles_dashboard.css" />
+    <link rel="icon" href="./Imagenes/logo-chico.png">
+    <style>
+      .plan--item::-webkit-details-marker { display: none; }
+      .nav__details[open] > .plan--item::after { content: '▾'; }
+      .nav__list { margin: 0 0 0 1.5rem; padding: 0; }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand__logo" aria-hidden="true"></div>
+        <div class="brand__text">
+          <div class="brand__title">COLEGIO ARZOBISPADO</div>
+          <div class="brand__subtitle">SSMA. CONCEPCIÓN</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <div class="nav__section"></div>
+          <a class="nav__item icon--dashboard" href="#">Dashboard</a>
+        <details class="nav__details">
+            <summary class="nav__item plan--item" justify-content: space-between;>Plan Estratégico</summary> 
+                <ul class="nav__list">
+                    <li class="nav__list">
+                        <a class="nav__item" href="/Frontend/Liderazgo.html">
+                          <span>Liderazgo</span>
+                        </a>
+                    </li>
+                    <li class="nav__list">
+                        <a class="nav__item" href="#">Gestión Pedagógica</a>
+                    </li>
+                    <li class="nav__list">
+                        <a class="nav__item" href="#">Convivencia Escolar</a>
+                    </li>
+                    <li class="nav__list">
+                        <a class="nav__item" href="#">Gestión de Recursos</a>
+                    </li>
+                </ul>
+        </details>
+
+          <a class="nav__item" href="#">Reportes</a>
+      </nav>
+
+      <div class="nav__section">
+        <a href="login.html" class="nav__item close--sesion">Cerrar sesion</a>
+      </div>
+    </aside>
+
+    <aside class="container">
+        <div class="container__top">
+            <div class="container__img">
+                <img src="/Frontend/Imagenes/Logo_Arzobispo.png" alt="Logo_Arzobispo">
+                <div class="text-content">
+                    <h2 class="container__title">COLEGIO ARZOBISPADO</h2>
+                    <h2 class="container__subtitle">SSMA. CONCEPCIÓN</h2>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+
+    <main class="main">
+      <header class="header">
+        <h1>Panel de Gestión</h1>
+      </header>
+
+      <section class="grid">
+        <article class="card">
+          <header class="card__header">
+            <h2>Avance del Plan Estratégico</h2>
+          </header>
+          <div class="card__body plan">
+            <div class="progress">
+              <div class="ring" style="--value: 75" aria-label="Avance 75%">
+                <div class="ring__inside">
+                  <div class="ring__value" id="progressValue">75%</div>
+                </div>
+              </div>
+            </div>
+            <ul class="stats">
+              <li><span>Indicadores</span><strong id="statIndicadores">20</strong></li>
+              <li><span>Metas</span><strong id="statMetas">35</strong></li>
+              <li><span>Actividades</span><strong id="statActividades">50</strong></li>
+              <li><span>Recursos</span><strong id="statRecursos">$50.000</strong></li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="card">
+          <header class="card__header">
+            <h2>Reporte de Gestión</h2>
+          </header>
+          <div class="card__body">
+            <ul class="report" id="reportList">
+            </ul>
+          </div>
+        </article>
+
+        <article class="card card--wide">
+          <header class="card__header">
+            <h2>Seguimiento de Recursos</h2>
+          </header>
+          <div class="card__body">
+            <div class="bars" id="resourcesBars">
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+ 
+    <script src="./js/app_dashboard.js" defer></script>
+  </body>
+  </html>
