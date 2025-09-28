@@ -102,122 +102,54 @@ function pintarBarras(items) {
     cont.appendChild(row);
   });
 }
-
-// -----------------------------------------------------------
-// NUEVA LÓGICA PARA CAMBIO DE CONTENIDO Y PLACEHOLDERS
-// -----------------------------------------------------------
-
-const placeholderContent = {
-  dashboard: {
-    title: 'Panel de Gestión',
-    isDashboard: true,
-    html: '', 
-  },
-  liderazgo: {
-    title: 'Plan Estratégico: Liderazgo',
-    html: `
-      <header class="header"><h1>Plan Estratégico: Liderazgo</h1></header>
-      <div class="card" style="padding: 20px; font-size: 1.5rem; text-align: center; height: 400px; display: grid; place-items: center;">
-        Placeholder 1: Contenido de Liderazgo
-      </div>
-    `,
-  },
-  'gestion-pedagogica': {
-    title: 'Plan Estratégico: Gestión Pedagógica',
-    html: `
-      <header class="header"><h1>Plan Estratégico: Gestión Pedagógica</h1></header>
-      <div class="card" style="padding: 20px; font-size: 1.5rem; text-align: center; height: 400px; display: grid; place-items: center;">
-        Placeholder 2: Contenido de Gestión Pedagógica
-      </div>
-    `,
-  },
-  'convivencia-escolar': {
-    title: 'Plan Estratégico: Convivencia Escolar',
-    html: `
-      <header class="header"><h1>Plan Estratégico: Convivencia Escolar</h1></header>
-      <div class="card" style="padding: 20px; font-size: 1.5rem; text-align: center; height: 400px; display: grid; place-items: center;">
-        Placeholder 3: Contenido de Convivencia Escolar
-      </div>
-    `,
-  },
-  'gestion-recursos': {
-    title: 'Plan Estratégico: Gestión de Recursos',
-    html: `
-      <header class="header"><h1>Plan Estratégico: Gestión de Recursos</h1></header>
-      <div class="card" style="padding: 20px; font-size: 1.5rem; text-align: center; height: 400px; display: grid; place-items: center;">
-        Placeholder 4: Contenido de Gestión de Recursos
-      </div>
-    `,
-  },
-};
-
-function showContent(sectionKey) {
-  const content = placeholderContent[sectionKey];
-  
-  // Referencias a las áreas de contenido
-  const originalContent = document.getElementById('dashboard-original-content');
-  const dynamicContent = document.getElementById('dynamic-content-area');
-
-  // Lógica de activación de menú ('is-active')
-  document.querySelectorAll('.nav__item').forEach(item => item.classList.remove('is-active'));
-  
-  const activeItem = document.querySelector(`[data-section="${sectionKey}"]`) || document.getElementById(`menu-${sectionKey}`);
-  if (activeItem) {
-    activeItem.classList.add('is-active');
-    // Si es un submenú, activa también el Plan Estratégico
-    if (sectionKey !== 'dashboard') {
-        const planItem = document.querySelector('.plan--item');
-        if(planItem) planItem.classList.add('is-active');
-    }
-  } else if (sectionKey === 'dashboard') {
-     document.getElementById('menu-dashboard').classList.add('is-active');
-  }
-
-  // Lógica para mostrar/ocultar el contenido
-  if (content.isDashboard) {
-    // Mostrar el dashboard original
-    originalContent.style.display = 'block';
-    dynamicContent.style.display = 'none';
-  } else {
-    // Mostrar el contenido dinámico (Placeholder)
-    originalContent.style.display = 'none';
-    dynamicContent.innerHTML = content.html;
-    dynamicContent.style.display = 'block';
-  }
-}
-
 window.addEventListener('DOMContentLoaded', () => {
-  // Inicializa los datos del dashboard original
   pintarAvance(data.avance);
   pintarStats(data.stats);
   pintarReporte(data.reporte);
   pintarBarras(data.recursos);
-  
-  // 1. Ocultamos el contenido dinámico al inicio
-  document.getElementById('dynamic-content-area').style.display = 'none';
-  
-  // 2. Listener para los submenús (Liderazgo, Gestión Pedagógica, etc.)
-  const subMenuItems = document.querySelectorAll('.sub-menu-item');
-  subMenuItems.forEach(item => {
-    item.addEventListener('click', (e) => {
-      e.preventDefault();
-      const section = e.target.closest('a').dataset.section;
-      showContent(section);
-    });
-  });
+});
 
-  // 3. Listener para el item de Dashboard
-  document.getElementById('menu-dashboard').addEventListener('click', (e) => {
-      e.preventDefault();
-      showContent('dashboard');
-  });
+function logout() {
+  localStorage.removeItem('token');
+  // ajusta ruta si tu login está en otra carpeta
+  window.location.href = 'login.html';
+}
 
-  // 4. Aseguramos que el menú del Plan Estratégico esté siempre desplegado y listo.
-  const planDetails = document.querySelector('.nav__details');
-  if (planDetails) {
-      planDetails.setAttribute('open', '');
+async function api(path, options = {}) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`http://127.0.0.1:8000${path}`, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    }
+  });
+  if (res.status === 401) {
+    logout();
+    throw new Error('Unauthorized');
+  }
+  return res.json();
+}
+
+// ====== Init ======
+window.addEventListener('DOMContentLoaded', async () => {
+  // Proteger la página: sin token -> login
+  if (!localStorage.getItem('token')) {
+    logout();
+    return;
   }
 
-  // 5. Mostrar el Dashboard por defecto al cargar
-  showContent('dashboard'); 
+  // Botón cerrar sesión
+  const btn = document.getElementById('btnLogout');
+  if (btn) btn.addEventListener('click', logout);
+
+  // Ejemplo: consumir API real
+  try {
+    const objectives = await api('/objectives');
+    console.log('Objectives desde API:', objectives);
+    // TODO: usa 'objectives' para renderizar tablas/cards si quieres
+  } catch (err) {
+    console.error('Error cargando datos:', err);
+  }
 });
+

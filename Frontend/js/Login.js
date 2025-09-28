@@ -1,5 +1,6 @@
+
 const form = document.querySelector('form');
-const $rut = document.getElementById('rut');
+const $username = document.getElementById('username');
 const $password = document.getElementById('password');
 const $submit   = document.getElementById('submit');
 const $msg      = document.getElementById('loginMsg');
@@ -11,8 +12,8 @@ function showMsg(text, cls = 'msg--info') {
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  if (!$rut.value.trim() || !$password.value) {
-    showMsg('Ingresa RUT y contraseña.', 'msg--error');
+  if (!$username.value.trim() || !$password.value) {
+    showMsg('Ingresa usuario y contraseña.', 'msg--error');
     return;
   }
 
@@ -23,7 +24,7 @@ form.addEventListener('submit', async (e) => {
     const res = await fetch('http://127.0.0.1:8000/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rut: $.value.trim(), password: $password.value })
+      body: JSON.stringify({ username: $username.value.trim(), password: $password.value })
     });
 
     if (!res.ok) {
@@ -42,3 +43,24 @@ form.addEventListener('submit', async (e) => {
     $submit.disabled = false;
   }
 });
+/*
+const $submit = document.getElementById("submit"),
+  $password = document.getElementById("password"),
+  $username = document.getElementById("username"),
+  $visible = document.getElementById("visible");
+
+document.addEventListener("change", (e)=>{
+  if(e.target === $visible){
+    if($visible.checked === false) $password.type = "password";
+    else $password.type = "text";
+  }
+})
+
+document.addEventListener("click", (e)=>{
+  if(e.target === $submit){
+    if($password.value !== "" && $username.value !== ""){
+      e.preventDefault();
+      window.location.href = "dashboard.html";
+    }
+  }
+})*/
