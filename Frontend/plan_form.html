@@ -1,0 +1,145 @@
+<form id="planForm" class="smart-form">
+
+  <!-- Plan estratégico -->
+  <fieldset class="section-card">
+    <h3 class="section-title">Planes estratégicos</h3>
+    <div class="grid-2">
+      <div class="field">
+        <label for="p_dimension">Dimensión *</label>
+        <select id="p_dimension"></select>
+      </div>
+      <div class="field">
+        <label for="p_school">Colegio *</label>
+        <select id="p_school">
+          <option value="Liceo La Asuncion de Talcahuano">Liceo La Asuncion de Talcahuano</option>
+        </select>
+      </div>
+
+      <div class="field span-2">
+        <label for="p_obj">Objetivo Estratégico *</label>
+        <textarea id="p_obj" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="p_strategy">Estrategia</label>
+        <input id="p_strategy" />
+      </div>
+      <div class="field">
+        <label for="p_sub">Subdimensiones</label>
+        <input id="p_sub" />
+      </div>
+
+      <div class="field">
+        <label for="p_action">Acción</label>
+        <input id="p_action" />
+      </div>
+      <div class="field span-2">
+        <label for="p_desc">Descripción</label>
+        <textarea id="p_desc" rows="3"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="p_start">Fecha Inicio *</label>
+        <input type="date" id="p_start" />
+      </div>
+      <div class="field">
+        <label for="p_end">Fecha Término *</label>
+        <input type="date" id="p_end" />
+      </div>
+
+      <div class="field">
+        <label for="p_program">Programa Asociado</label>
+        <input id="p_program" />
+      </div>
+      <div class="field">
+        <label for="p_resp">Responsable</label>
+        <input id="p_resp" />
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- Recursos del objetivo -->
+  <fieldset class="section-card">
+    <h3 class="section-title">Recursos del objetivo</h3>
+    <div class="grid-4">
+      <div class="field span-4">
+        <label for="r_need">Recursos Necesarios de Ejecución</label>
+        <textarea id="r_need" rows="3"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="r_ate">Ate</label>
+        <input id="r_ate" />
+      </div>
+      <div class="field">
+        <label for="r_tic">Tic</label>
+        <input id="r_tic" />
+      </div>
+      <div class="field span-2">
+        <label for="r_planes">Plan(es)</label>
+        <input id="r_planes" />
+      </div>
+      <div class="field span-2">
+        <label for="r_medios">Medios de Verificación</label>
+        <input id="r_medios" />
+      </div>
+
+      <!-- montos (4 x fila) -->
+      <div class="field">
+        <label for="r_subv_gen">Monto Subv. General</label>
+        <input id="r_subv_gen" class="money" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label for="r_sep">Monto SEP</label>
+        <input id="r_sep" class="money" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label for="r_pie">Monto PIE</label>
+        <input id="r_pie" class="money" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label for="r_eib">Monto EIB</label>
+        <input id="r_eib" class="money" inputmode="numeric" />
+      </div>
+
+      <div class="field">
+        <label for="r_mant">Monto Mantención</label>
+        <input id="r_mant" class="money" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label for="r_proret">Monto Pro retención</label>
+        <input id="r_proret" class="money" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label for="r_internado">Monto Internado</label>
+        <input id="r_internado" class="money" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label for="r_reforz">Monto Reforzamiento</label>
+        <input id="r_reforz" class="money" inputmode="numeric" />
+      </div>
+
+      <div class="field">
+        <label for="r_faep">Monto FAEP</label>
+        <input id="r_faep" class="money" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label for="r_aporte_mun">Monto Aporte Municipal</label>
+        <input id="r_aporte_mun" class="money" inputmode="numeric" />
+      </div>
+      <div class="field span-2">
+        <label for="r_total">Monto Total</label>
+        <input id="r_total" class="money" readonly />
+      </div>
+    </div>
+  </fieldset>
+
+  <div class="section-card form-actions">
+    <span id="plansMsg" class="msg"></span>
+    <button type="submit" class="btn">Guardar plan</button>
+  </div>
+</form>
+
+  </article>
+
+    <script src="Frontend/js/plan_form.js" defer></script>

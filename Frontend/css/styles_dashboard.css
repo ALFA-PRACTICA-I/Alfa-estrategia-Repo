@@ -1,6 +1,6 @@
 :root {
-  --primary: #1e5ac8;
-  --primary-600: #1a4ead;
+  --primary: #1E51A0;
+  --primary-600: #233A7F;
   --bg: #f4f7ff;
   --surface: #ffffff;
   --text: #0f172a;
@@ -8,20 +8,22 @@
   --ring-bg: #e9efff;
   --ok: #16a34a;
   --warn: #f59e0b;
-  --info: #0ea5e9;
+  --info: #54A4DB;
   --danger: #ef4444;
   --shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
 }
 
 * { box-sizing: border-box; }
-html, body { height: 100%; }
+html{ height: 100%; }
 body {
   margin: 0;
   display: grid;
-  grid-template-columns: 17% 1fr;
+  grid-template-columns: 15% 1fr;
   background: var(--bg);
   color: var(--text);
   font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  min-height: auto; 
+  height: auto;
 }
 
 /*container top*/
@@ -31,51 +33,33 @@ body {
   width: 100%;
   height: 130px;
 }
-.container__img {
-  background-color: white;
-  margin: 12px auto;
-  display: flex; 
-  align-items: center; justify-content: flex-start; 
-  gap: 20px;
-  width: 70%;
-  height: 100px;
-  border-radius: 20px;
-}
-.container__img img{height: 95px; width: 86px;}
-.text-content {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-.container__title, .container__subtitle {
-  height: auto;
-  width: 100%;
-  margin: 0;
-  box-sizing: border-box; 
-  font: bold 30px;
-}
+
 
 /* Sidebar */
 .sidebar {
   background: linear-gradient(180deg, var(--primary), var(--primary-600));
   color: #fff;
   padding: 20px 16px;
-  position: relative;
-  top: 130px;
+  grid-column: 1 / 2;
+  position: sticky;
+  z-index: 10;
+  top: 0px;
   border-radius: .5px;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0px 4px 20PX;
+  padding: 20px 4px;
 }
 .brand__logo {
-  width: 46px; height: 40px; border-radius: 50%;
+  width: 65px; height: 62px; border-radius: 50%;
   display: grid; place-items: center;
   font-weight: 800; letter-spacing: .5px;
-  background-image: url(/Frontend/Imagenes/user.png);
+  background-image: url(/Frontend/Imagenes/ICONOS/blanco/ICONOS-62.png);
     background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -113,17 +97,33 @@ content: '▾';
 }
 
 .nav__item, .nav__close{
-  display: block;
+  display: flex;
+  align-items: center;
   color: #fff;
   text-decoration: none;
-  padding: 10px 12px;
+  padding: 6px 18px;
   border-radius: 10px;
   margin: 4px 4px;
   opacity: .95;
 }
 
+.nav__icon {
+  width: 50px; 
+  height: 50px;
+  margin-right: 12px; 
+}
+
 .nav__item:hover { background: rgba(255,255,255,.12); }
 .nav__item.is-active { background: rgba(255,255,255,.18); font-weight: 600; }
+
+
+.nav__details ul{
+  margin: 0;
+  padding-left: 80px;
+  list-style: disc;
+}
+.nav__details ul a.nav__item {padding: 10px 4px;}
+
 
 .close--sesion{
   text-align: center;
@@ -137,12 +137,14 @@ content: '▾';
 
 /* Main area */
 .main { 
-  padding: 20px; 
+  padding: 20px 10px; 
   position: relative;
-  height: calc(100% - 16.5%);
-  top: 150px;
+  padding-top: 130px;
 }
 .header h1 { margin: 0 0 16px; font-size: 20px; }
+
+.main.header{max-width: 1440px; margin: 0 auto 30px auto; text-align: center;}
+.main.header h1, .main.header h2 {margin: 0 auto; }
 
 .grid {
   display: grid;
@@ -210,4 +212,174 @@ content: '▾';
 @media (max-width: 780px) {
   .grid { grid-template-columns: 1fr; }
   .plan { grid-template-columns: 1fr; }
+}
+
+.obj-list{list-style:none;margin:0;padding:0}
+.obj-item{padding:12px 14px;border-bottom:1px solid #eef2f7}
+.obj-item__title{font-weight:700;margin-bottom:6px}
+.obj-item__num{color:#1d4ed8;margin-right:.25rem}
+.obj-item__actions{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.obj-item__meta{color:#64748b;font-size:.9rem}
+.btn--sm{padding:6px 10px;font-size:.9rem}
+.btn--ghost{background:transparent;border:1px solid #cbd5e1}
+
+/* ===== Tabla genérica ===== */
+.table-wrap {
+  position: relative;
+  /* NO ocultes scroll aquí; el scroll horizontal vive en .hscroll */
+  overflow: visible;
+}
+
+/* contenedor que scrollea horizontal (barra nativa visible) */
+.table-wrap .hscroll {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable both-edges;
+}
+
+
+
+
+/* primera columna fija (header y body) */
+.plan-table th:first-child,
+.plan-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: #fff;
+  box-shadow: 2px 0 0 rgba(0,0,0,.03);
+}
+
+/* alinear montos a la derecha */
+.plan-table td.money { 
+  text-align: right; 
+  white-space: nowrap;
+}
+
+/* anchos por columna (ajusta a gusto) */
+.plan-table .w-lg { width: 340px; }
+.plan-table .w-md { width: 220px; }
+.plan-table .w-sm { width: 140px; }
+.plan-table .w-xs { width: 90px;  }
+
+/* (opcional) botones para mover el scroll */
+.scroll-btns {
+  position: absolute;
+  right: .5rem;
+  top: .35rem;
+  display: flex;
+  gap: .25rem;
+  z-index: 4;
+}
+.scroll-btns .btn-swipe {
+  border: 1px solid #cfd8ea;
+  background: #fff;
+  border-radius: 6px;
+  padding: .25rem .5rem;
+  cursor: pointer;
+}
+.scroll-btns .btn-swipe:active { transform: translateY(1px); }
+
+
+/* Esconde en <= 1440px */
+@media (max-width: 1440px) {
+  .hide-md { display: none; }
+}
+/* Esconde en <= 1200px (aún más compacto) */
+@media (max-width: 1200px) {
+  .hide-sm { display: none; }
+}
+/* ===== FORM LAYOUT BONITO ===== */
+.smart-form{ max-width: 1360px; margin: 0 auto; }
+.smart-form fieldset{ border:0; margin:0 0 16px; padding:0; }
+.smart-form .section-card{ background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); padding: 16px; }
+.smart-form .section-title{ margin: 0 0 12px; font-size: 16px; font-weight: 700; }
+
+/* grids */
+.smart-form .grid-2{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+.smart-form .grid-4{ display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; }
+
+/* campo */
+.smart-form .field{ display:flex; flex-direction:column; }
+.smart-form .field > label{ font-size:12px; color:var(--muted); margin-bottom:6px; }
+.smart-form .field > input,
+.smart-form .field > select,
+.smart-form .field > textarea{
+  padding:10px 12px; border:1px solid #e4e9f2; border-radius:8px; background:#fff; min-height:38px;
+}
+
+/* spans para que un campo ocupe 2/3/4 columnas */
+.smart-form .span-2{ grid-column: span 2; }
+.smart-form .span-3{ grid-column: span 3; }
+.smart-form .span-4{ grid-column: span 4; }
+
+/* números a la derecha */
+.smart-form .money{ text-align:right; }
+
+/* pie del formulario */
+.smart-form .form-actions{ display:flex; gap:.5rem; justify-content:flex-end; align-items:center; }
+
+/* responsivo */
+@media (max-width: 980px){
+  .smart-form .grid-2, .smart-form .grid-4{ grid-template-columns: 1fr; }
+  .smart-form .span-2, .smart-form .span-3, .smart-form .span-4{ grid-column:auto; }
+}
+
+/* ===== Escalar SOLO el formulario ===== */
+.smart-form{
+  max-width: 1440px;           /* más ancho del contenedor del form */
+}
+.smart-form .grid-2,
+.smart-form .grid-4{
+  gap: 18px;                    /* mayor separación entre campos */
+}
+
+/* Títulos y etiquetas más grandes */
+.header h1{ font-size: 22px; }
+.smart-form .section-title{
+  font-size: 20px;
+  margin-bottom: 14px;
+}
+.smart-form .field > label{
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+/* Campos más altos y con tipografía más grande */
+.smart-form .field > input,
+.smart-form .field > select,
+.smart-form .field > textarea{
+  font-size: 16px;             /* antes ~14px */
+  min-height: 46px;            /* altura mínima del control */
+  padding: 12px 14px;          /* acolchado interno */
+  border-radius: 10px;
+}
+
+/* Textareas más cómodos */
+.smart-form .field > textarea{
+  min-height: 120px;
+  line-height: 1.5;
+}
+
+/* Botones un poco más grandes */
+.btn, .btn--sm{
+  font-size: 16px;
+  padding: 10px 16px;
+}
+
+/* Si quieres subir levemente todo el tamaño base del sitio (opcional) */
+body{
+  font-size: 16px;             /* antes 14px; sube a 17–18 si lo prefieres */
+  line-height: 1.55;
+}
+
+/* En pantallas pequeñas, reduce un poco para que no “apriete” */
+@media (max-width: 980px){
+  body{ font-size: 15px; }
+  .smart-form{ max-width: 100%; }
 }

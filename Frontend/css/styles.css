@@ -2,14 +2,13 @@
   padding: 0;
   margin: 0;
   box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Montserrat', 'Avenir', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body img{
   z-index: 0;
   height: 100%;
   width: 100%;
-  position: absolute;
   opacity: 0.8;
 }
 
@@ -30,15 +29,15 @@ form{
   justify-self: center;
   align-items: center;
   flex-direction: column;
-  position: relative;
+  position: absolute;
   border-radius: 20px;
-  background-color: #fff;
+  background-color: #F6F6F6;
   box-shadow: 0 0 30px #444e;
 }
 
 form img{
   width: 300px;
-  height: 200px;
+  height: 190px;
   padding: 0px 0px 30px 0px;
   margin: 0 -10px 20px -20px;
   align-items: center;
@@ -56,7 +55,7 @@ form input[type="text"],[type="password"]{
   outline: 0;
   border: 2px solid #ccc;
   border-radius: 4px;
-  background: #eee;
+  background: #DADADA;
   width: 80%;
   padding: 10px;
 }
@@ -64,30 +63,22 @@ form input[type="text"],[type="password"]{
 form label{
   font-weight: 500;
   padding: 10px;
+  position: relative;
 }
-
-/*
-.box-visible{
-  width: 230px;
-  height: auto;
-  display: flex;
-  justify-content: flex-start; Cambiado para alinear a la izquierda 
-  align-items: center;
-}*/
 
 form button{
   outline: 0;
   border: 0;
-  background-color: blue;
+  background-color: #1E51A0;
   border-radius: 15px;
   cursor: pointer;
   width: 80%;
   height: 35px;
   position: absolute;
-  bottom: 20px ;
+  bottom: 28px ;
   transition: all .3s ease-in-out;
   text-align: center;
-  color: #fff;
+  color: #F6F6F6;
   font-weight: 500;
   font-size: 20px;
 }

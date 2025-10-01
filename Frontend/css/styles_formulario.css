@@ -1,0 +1,131 @@
+.form-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(280px,1fr));
+  gap:16px 20px;
+  align-items:start;
+}
+
+.form-row{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.form-row label{
+  font-size:.9rem;
+  color:#334155;
+  font-weight:600;
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid #cbd5e1;
+  border-radius:10px;
+  background:#f8fafc;
+  outline:none;
+  transition:border-color .15s,box-shadow .15s,background .15s;
+}
+
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus{
+  border-color:#3b82f6;
+  box-shadow:0 0 0 3px rgba(59,130,246,.15);
+  background:#fff;
+}
+
+.form-row textarea{ min-height:84px; resize:vertical; }
+
+/* filas que ocupan el ancho completo */
+.span-2{ grid-column:1 / -1; }
+
+.form-actions{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  justify-content:flex-start;
+  margin-top:4px;
+}
+
+.form-actions button{
+  background:#1d4ed8;
+  color:#fff;
+  border:0;
+  border-radius:9999px;
+  padding:10px 18px;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:0 8px 18px rgba(29,78,216,.25);
+}
+.form-actions button:hover{ background:#1e40af; }
+
+.msg{ min-height:1.25em; font-size:.9rem; }
+.msg--ok{ color:#16a34a; }
+.msg--error{ color:#dc2626; }
+
+/* ---------- Tabla de planes ---------- */
+.table-wrap{
+  margin-top:24px;
+  border:1px solid #e2e8f0;
+  border-radius:14px;
+  overflow:hidden;
+}
+
+#plansTable{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.95rem;
+}
+
+#plansTable thead th{
+  text-align:left;
+  background:#f1f5f9;
+  color:#334155;
+  padding:10px 12px;
+  font-weight:700;
+}
+
+#plansTable tbody td{
+  padding:10px 12px;
+  border-top:1px solid #e2e8f0;
+}
+
+.btn-delete{
+  background:#ef4444;
+  color:#fff;
+  border:0;
+  border-radius:8px;
+  padding:6px 10px;
+  font-weight:600;
+  cursor:pointer;
+}
+.btn-delete:hover{ background:#dc2626; }
+
+/* Responsive */
+@media (max-width:900px){
+  .form-grid{ grid-template-columns:1fr; }
+  .form-actions{ justify-content:stretch; }
+  .form-actions button{ width:100%; }
+}
+.form-grid select,
+.form-grid input,
+.form-grid textarea {
+  background: #fff;
+  color: #0f172a;
+}
+
+.form-grid select option {
+  background: #fff;   /* color del desplegable */
+  color: #0f172a;     /* texto de las opciones */
+}
+
+/* foco accesible y consistente */
+.form-grid select:focus,
+.form-grid input:focus,
+.form-grid textarea:focus {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
