@@ -12,8 +12,7 @@
 
   <style>
     .plan--item::-webkit-details-marker { display: none; }
-    .nav__details[open] > .plan--item::after { content: '▾'; }
-    .nav__list { margin: 0 0 0 1.5rem; padding-left: 0; list-style: none; }
+    .nav__details > .plan--item::after { content: '▸'; }
   </style>
 </head>
 <body>
@@ -31,21 +30,23 @@
       <div class="nav__section"></div>
 
       <a id="nav-dashboard" class="nav__item" href="#/dashboard">
-        <img src="/Frontend/Imagenes/ICONOS/blanco/ICONOS-58.png" alt="Ícono Dashboard" class="nav__icon">
+        <img src="/Frontend/Imagenes/ICONOS/blanco/ICONOS-51.png" alt="Ícono Dashboard" class="nav__icon">
         Dashboard
       </a>
 
       <details class="nav__details">
         <summary class="nav__item plan--item">
-          <img src="/Frontend/Imagenes/ICONOS/blanco/ICONOS-51.png" alt="Ícono Plan" class="nav__icon">
+          <img src="/Frontend/Imagenes/ICONOS/blanco/ICONOS-68.png" alt="Ícono Plan" class="nav__icon">
           Plan Estratégico
         </summary>
-        <ul>
-          <li><a class="nav__item" id="link-liderazgo" href="#/planes/liderazgo">Liderazgo</a></li>
-          <li><a class="nav__item" id="link-gestion" href="#/planes/gestion">Gestión Pedagógica</a></li>
-          <li><a class="nav__item" id="link-convivencia" href="#/planes/convivencia">Convivencia Escolar</a></li>
-          <li><a class="nav__item" id="link-recursos" href="#/planes/recursos">Gestión de Recursos</a></li>
-        </ul>
+        <div class="nav__submenu-content"> 
+          <ul>
+            <li><a class="nav__item" id="link-liderazgo" href="#/planes/liderazgo">Liderazgo</a></li>
+            <li><a class="nav__item" id="link-gestion" href="#/planes/gestion">Gestión Pedagógica</a></li>
+            <li><a class="nav__item" id="link-convivencia" href="#/planes/convivencia">Convivencia Escolar</a></li>
+            <li><a class="nav__item" id="link-recursos" href="#/planes/recursos">Gestión de Recursos</a></li>
+          </ul>
+        </div>
       </details>
 
       <a id="nav-plan-form" class="nav__item" href="#/planes/form">
@@ -70,17 +71,30 @@
   <!-- Cabecera superior -->
   <aside class="container">
     <div class="container__top">
-      <div class="card"> <img src="./Imagenes/LOGOS/Insignias - logos colegios/Colegio San Jose - Cabrero-transparente.png" alt="0"></div>
-      <div class="card"> <img src="./Imagenes/LOGOS/Insignias - logos colegios/IHC_.png" alt="1"></div>
-      <div class="card"> <img src="./Imagenes/LOGOS/Insignias - logos colegios/IHCASS-transparente1.png" alt="2"></div>
-      <div class="card"> <img src="./Imagenes/LOGOS/Insignias - logos colegios/IHL SFA-1-transparente.png" alt="3"></div>
-      <div class="card"> <img src="./Imagenes/LOGOS/Insignias - logos colegios/Instituto San Sebastian Yumbel-1-transparente.png" alt="4"></div>
-      <div class="card"> <img src="./Imagenes/LOGOS/Insignias - logos colegios/ISJ-1-transparente.png" alt="5"></div>
-      <div class="card"> <img src="./Imagenes/LOGOS/Insignias - logos colegios/lla-trans.png" alt="6"></div>
-      <div class="card"> <img src="./Imagenes/LOGOS/Insignias - logos colegios/Logo Jardín Fabiola(1).png" alt="7"></div>
-      <div class="card"> <img src="./Imagenes/LOGOS/Insignias - logos colegios/Logo-ihch-trans-1v (2).png" alt="8"></div>
-      <div class="card"> <img src="./Imagenes/LOGOS/Insignias - logos colegios/logo-Jardin-Fabiola-rounded (1).png" alt="9"></div>
-      <div class="card"> <img src="./Imagenes/LOGOS/Insignias - logos colegios/logo_renovación.png" alt="10"></div>
+      <div class="logos-wrapper">
+        <img src="Imagenes/LOGOS/logo_sin texto-04.png" alt="Logo Colegio 11" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/lla-trans.png" alt="Logo Colegio 7" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/Colegio San Jose - Cabrero-transparente.png" alt="Logo Colegio 1" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/IHC_.png" alt="Logo Colegio 2" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/IHCASS-transparente1.png" alt="Logo Colegio 3" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/IHL SFA-1-transparente.png" alt="Logo Colegio 4" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/Instituto San Sebastian Yumbel-1-transparente.png" alt="Logo Colegio 5" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/ISJ-1-transparente.png" alt="Logo Colegio 6" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/Logo Jardín Fabiola(1).png" alt="Logo Colegio 8" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/Logo-ihch-trans-1v (2).png" alt="Logo Colegio 9" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/logo-Jardin-Fabiola-rounded (1).png" alt="Logo Colegio 10" class="logo-top">
+
+                <img src="Imagenes/LOGOS/logo_sin texto-04.png" alt="Logo Colegio 11" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/lla-trans.png" alt="Logo Colegio 7" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/Colegio San Jose - Cabrero-transparente.png" alt="Logo Colegio 1" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/IHC_.png" alt="Logo Colegio 2" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/IHCASS-transparente1.png" alt="Logo Colegio 3" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/IHL SFA-1-transparente.png" alt="Logo Colegio 4" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/Instituto San Sebastian Yumbel-1-transparente.png" alt="Logo Colegio 5" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/ISJ-1-transparente.png" alt="Logo Colegio 6" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/Logo Jardín Fabiola(1).png" alt="Logo Colegio 8" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/Logo-ihch-trans-1v (2).png" alt="Logo Colegio 9" class="logo-top">
+        <img src="Imagenes/LOGOS/Insignias - logos colegios/logo-Jardin-Fabiola-rounded (1).png" alt="Logo Colegio 10" class="logo-top">
     </div>
   </aside>
   <main class="main">
@@ -91,8 +105,6 @@
     <section id="view"></section>
   </main>
 
-  
-  <!-- JS principal (router). NO cargues plan_form.js aquí. -->
   <script type="module" src="js/app_dashboard.js"></script>
 </body>
 </html>

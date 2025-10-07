@@ -15,10 +15,10 @@ export function initPlanForm() {
   if (schoolEl) {
     if (schoolEl.tagName === "SELECT") {
       schoolEl.innerHTML = `<option value="${SCHOOL}">${SCHOOL}</option>`;
-      schoolEl.disabled = false;        // si quieres mostrarlo activo
+      schoolEl.disabled = false;
     } else {
       schoolEl.value = SCHOOL;
-      schoolEl.readOnly = true;         // si es <input>
+      schoolEl.readOnly = true; 
     }
   }
   if (!$form) return;

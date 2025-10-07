@@ -155,7 +155,7 @@ async function getPlansByDimension(dimensionValue) {
   if (res.status === 401) { window.location.href = 'login.html'; return { list: [], groups: new Map() }; }
 
   const list = await res.json();
-  // Agrupa por objetivo (clave EXACTA del backend: objetivo_estrategico)
+  // Agrupa por objetivo 
   const groups = new Map();
   for (const p of list) {
     const key = (p.objetivo_estrategico || '').trim() || '(Sin objetivo)';
@@ -237,7 +237,7 @@ async function showPlanList(dimensionValue) {
   let html = `<ol class="obj-list">`;
   const orden = [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], 'es'));
   for (const [objetivo, items] of orden) {
-    const oEnc = encodeURIComponent(objetivo); // robusto para data-attrs
+    const oEnc = encodeURIComponent(objetivo); 
     html += `
       <li class="obj-item">
         <div class="obj-item__title">
@@ -245,7 +245,8 @@ async function showPlanList(dimensionValue) {
         </div>
         <div class="obj-item__actions">
           <button class="btn btn--sm" data-act="ver" data-obj="${oEnc}">Ir al objetivo</button>
-          <button class="btn btn--sm btn--ghost" data-act="rec" data-obj="${oEnc}">Recursos del objetivo</button>
+          <button class="btn btn--sm" data-act="rec" data-obj="${oEnc}">Recursos del objetivo</button>
+          <button class="btn btn--sm" data-act="ver" data-obj="${oEnc}">Evidencias</button>
           <span class="obj-item__meta">${items.length} acción(es)</span>
         </div>
       </li>
@@ -325,7 +326,7 @@ async function showObjectiveResources(dimensionValue, objetivo) {
   const plans = (groups.get(objetivo) || []).slice()
     .sort((a, b) => (a.fecha_inicio || '').localeCompare(b.fecha_inicio || ''));
 
-  // 1) Traer recursos por cada plan
+  // Traer recursos por cada plan
   const lists = await Promise.all(
     plans.map(p =>
       fetch(`${API}/plans/${p.id}/resources`, { headers: { ...authHeaders() } })
@@ -334,7 +335,7 @@ async function showObjectiveResources(dimensionValue, objetivo) {
     )
   );
 
-  // 2) Aplanar: una fila por recurso (si un plan no tiene recursos, ponemos una fila vacía)
+  // Aplanar: una fila por recurso (si un plan no tiene recursos, ponemos una fila vacía)
   const rows = [];
   lists.forEach((resources, idx) => {
     const plan = plans[idx];
@@ -446,23 +447,95 @@ async function showObjectiveResources(dimensionValue, objetivo) {
 }
 
 
+// ==== REPORTES =====
+
+function showReportes() {
+    $title.textContent = 'Reportes'; 
+    
+    $view.innerHTML = `
+      <section class="card card--full">
+        <header class="card__header">
+          <h2 style="margin:0;">Reportes</h2>
+        </header>
+        <div class="card__body" style="padding: 50px; text-align: center;">
+          <h1 style="color: var(--primary); font-size: 2.5rem;">En proceso...</h1>
+          <p style="margin-top: 15px; font-size: 1.2rem;">
+              Pronto podrás acceder a los informes de gestión.
+          </p>
+        </div>
+      </section>
+    `;
+    
+}
+
+// ======== Funcion para la transicion de acordeon =========
+function setupAccordionTransition() {
+  document.querySelectorAll('.nav__details').forEach(details => {
+    const content = details.querySelector('.nav__submenu-content');
+    const summary = details.querySelector('summary'); 
+    if (!content || !summary) return;
+    
+    if (details.open) {
+      content.style.maxHeight = content.scrollHeight + 'px';
+      content.style.transition = 'max-height 0.4s ease-in-out';
+    } else {
+      content.style.maxHeight = '0';
+    }
+
+    summary.addEventListener('click', (e) => { 
+      e.preventDefault(); 
+
+      const isOpening = !details.open; 
+      if (isOpening) {
+        details.open = true; 
+        content.style.transition = 'none';
+        const scrollHeight = content.scrollHeight;
+        
+        requestAnimationFrame(() => {
+          content.style.maxHeight = scrollHeight + 'px';
+          content.style.transition = 'max-height 0.4s ease-in-out';
+        });
+
+      } else {
+        content.style.transition = 'none';
+        content.style.maxHeight = content.scrollHeight + 'px';
+        
+        requestAnimationFrame(() => {
+          content.style.transition = 'max-height 0.4s ease-in-out';
+          content.style.maxHeight = '0';
+          
+          const transitionEndHandler = () => {
+            details.open = false;
+            content.removeEventListener('transitionend', transitionEndHandler);
+          };
+          content.addEventListener('transitionend', transitionEndHandler);
+        });
+      }
+    });
+  });
+}
+
+
 // ====== Router por hash ======
 async function router() {
   const hash = location.hash || '#/dashboard';
   setActiveByHash(hash);
 
   if (hash === '#/dashboard')          return showDashboard();
+  if (hash === '#/reportes')           return showReportes();
   if (hash === '#/planes/form')        return showPlanForm();
   if (hash === '#/planes/liderazgo')   return showPlanList('LIDERAZGO');
   if (hash === '#/planes/gestion')     return showPlanList('GESTION_PEDAGOGICA');
   if (hash === '#/planes/convivencia') return showPlanList('CONVIVENCIA_ESCOLAR');
   if (hash === '#/planes/recursos')    return showPlanList('GESTION_RECURSOS');
 
+
   // fallback
   return showDashboard();
 }
 window.addEventListener('hashchange', router);
 window.addEventListener('DOMContentLoaded', router);
+window.addEventListener('DOMContentLoaded', setupAccordionTransition);
 
 // (opcional) listeners directos si tienes botones con IDs:
 document.getElementById('nav-dashboard')?.addEventListener('click', e => { e.preventDefault(); location.hash = '#/dashboard'; });
