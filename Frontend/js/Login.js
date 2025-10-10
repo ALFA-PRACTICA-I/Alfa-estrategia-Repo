@@ -21,15 +21,29 @@ form.addEventListener('submit', async (e) => {
   showMsg('Validando credenciales...', 'msg--info');
 
   try {
+    const formData = new URLSearchParams();
+    formData.append('username', $username.value.trim());
+    formData.append('password', $password.value);
+
     const res = await fetch('http://127.0.0.1:8000/auth/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: $username.value.trim(), password: $password.value })
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: formData.toString()
     });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      showMsg(err.detail || 'Credenciales inválidas', 'msg--error');
+      let errorMessage = 'Credenciales inválidas. Verifica tu usuario y contraseña.';
+      
+      if (err.detail) {
+        if (Array.isArray(err.detail) && err.detail.length > 0) {
+          errorMessage = err.detail[0].msg;
+        } else if (typeof err.detail === 'string') {
+          errorMessage = err.detail;
+        }
+      }
+
+      showMsg(errorMessage, 'msg--error');
       return;
     }
 
@@ -38,7 +52,7 @@ form.addEventListener('submit', async (e) => {
     showMsg('¡Ingreso exitoso! Redirigiendo...', 'msg--ok');
     setTimeout(() => { window.location.href = 'dashboard.html'; }, 700);
   } catch (err) {
-    showMsg('No se pudo conectar con el servidor.', 'msg--error');
+    showMsg('Error de conexión con el servidor.', 'msg--error');
   } finally {
     $submit.disabled = false;
   }

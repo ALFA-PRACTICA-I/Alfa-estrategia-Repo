@@ -15,10 +15,10 @@ export function initPlanForm() {
   if (schoolEl) {
     if (schoolEl.tagName === "SELECT") {
       schoolEl.innerHTML = `<option value="${SCHOOL}">${SCHOOL}</option>`;
-      schoolEl.disabled = false;
+      schoolEl.disabled = false;        // si quieres mostrarlo activo
     } else {
       schoolEl.value = SCHOOL;
-      schoolEl.readOnly = true; 
+      schoolEl.readOnly = true;         // si es <input>
     }
   }
   if (!$form) return;
@@ -155,7 +155,11 @@ export function initPlanForm() {
         headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify(payload)
       });
-
+      if (res.status === 403) {
+        $msg.textContent = "No tienes permisos para guardar.";
+        $msg.className = "msg msg--error";
+        return;
+      }
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         if ($msg) {

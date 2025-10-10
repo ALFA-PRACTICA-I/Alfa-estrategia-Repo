@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Form, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware #nueva importación
-from fastapi.security import OAuth2PasswordBearer # Necesario para el flujo de login estándar de FastAPI
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm # Necesario para el flujo de login estándar de FastAPI
 from pathlib import Path
 from pydantic import BaseModel, field_validator
-from typing import Optional, List
+from typing import Optional, List, Generator
 from datetime import datetime, timedelta, timezone, date
 import uuid
 from passlib.context import CryptContext
@@ -60,7 +60,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 SECRET_KEY = "COLEGIO_ARZOBISPADO" 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 40 
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -72,15 +72,101 @@ engine = create_engine(DATABASE_URL, pool_pre_ping=True, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 Base = declarative_base()
 
+# ------------------------codigo nuevo---------------------
 
-# ---- Helpers ----
+def get_db() -> Generator[Session, None, None]:
+    db = SessionLocal()
+    try:
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> UserModel:
+    """Decodifica el token, maneja la expiración/invalidez (401) y retorna el usuario."""
+    
+    # Excepción estándar 401
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Credenciales inválidas (token ausente o expirado)",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        # Decodifica el token usando SECRET_KEY y ALGORITHM
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        # Lee la clave estándar "sub" (subject)
+        username: str = payload.get("sub") 
+        
+        if username is None:
+            raise credentials_exception
+            
+    except JWTError:
+        # Si la decodificación falla (token expirado, firma incorrecta, etc.)
+        raise credentials_exception
+    
+    # Busca el usuario por el nombre de usuario ('sub')
+    user = db.execute(
+        select(UserModel).where(UserModel.name == username)).scalar_one_or_none()
+    
+    if user is None:
+        raise credentials_exception # Usuario no encontrado, 401
+        
+    # Puedes añadir la verificación de actividad de la Versión 1 si es necesaria
+    if not user.is_active: 
+        raise credentials_exception
+
+    return user
+
+def require_role(*roles: str):
+    """
+    Dependencia de seguridad que verifica si el usuario autenticado
+    (obtenido de get_current_user) tiene uno de los roles especificados.
+    Lanza 403 Forbidden si no tiene el rol.
+    """
+    def _dep(user: UserModel = Depends(get_current_user)) -> UserModel:
+        # user.role es la columna de rol en tu modelo SQLAlchemy
+        if user.role not in roles:
+            raise HTTPException(status_code=403, detail="Permisos insuficientes")
+        return user
+    return _dep
+
+
+# ==============================
+# Utilidades & validaciones
+# ==============================
+def _dv_mod11(num: str) -> str:
+    serie = [2,3,4,5,6,7]
+    s, i = 0, 0
+    for d in reversed(num):
+        s += int(d) * serie[i % len(serie)]
+        i += 1
+    resto = 11 - (s % 11)
+    if resto == 11: return "0"
+    if resto == 10: return "K"
+    return str(resto)
+
+def normalize_rut(rut: str) -> str:
+    s = re.sub(r"[^0-9kK]", "", rut or "")
+    if len(s) < 2:
+        raise HTTPException(status_code=400, detail="RUT inválido")
+    cuerpo, dv = s[:-1], s[-1].upper()
+    if not cuerpo.isdigit():
+        raise HTTPException(status_code=400, detail="RUT inválido")
+    if _dv_mod11(cuerpo) != dv:
+        # usamos mismo mensaje para no filtrar info
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    # PRESERVA CEROS A LA IZQUIERDA
+    return cuerpo + dv
 
 def asdict(model: BaseModel) -> dict:
-    """Works on Pydantic v1 or v2 seamlessly."""
     if hasattr(model, "model_dump"):
         return model.model_dump()
     return model.dict()
-
 
 CURRENT_YEAR = datetime.utcnow().year
 MIN_YEAR = 1900
@@ -88,7 +174,8 @@ MAX_YEAR = CURRENT_YEAR + 10
 
 ALLOWED_EXTS = {".pdf", ".png", ".jpg", ".jpeg", ".xlsx", ".docx"}
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
-COPY_CHUNK_SIZE = 1024 * 1024  # 1 MB
+COPY_CHUNK_SIZE = 1024 * 1024        # 1 MB
+
 
 # ---- Schemas ----
 
@@ -165,6 +252,10 @@ class DimensionEnum(str, Enum):
     CONVIVENCIA_ESCOLAR = "CONVIVENCIA_ESCOLAR"
     GESTION_RECURSOS = "GESTION_RECURSOS"
 
+class RoleEnum(str, Enum):
+    editor = "editor"
+    viewer = "viewer"
+
 class StrategicPlanCreate(BaseModel):
     dimension: DimensionEnum
     colegio: str                          # nombre del colegio (v1 simple; luego puedes hacer catálogo)
@@ -227,7 +318,21 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel): 
-    username: Optional[str] = None
+    sub: Optional[str] = None 
+    role: Optional[str] = None
+
+
+class MeOut(BaseModel):
+    id: int
+    rut: str
+    name: str
+    email: str
+    role: str
+    is_active: bool
+
+@app.get("/auth/me", response_model=MeOut)
+def me(u: UserModel = Depends(get_current_user)):
+    return MeOut(id=u.id, rut=u.rut, name=u.name, email=u.email, role=u.role, is_active=u.is_active)
 
 # ---- ORM Models ----
 
@@ -281,11 +386,13 @@ class EvidenceModel(Base):
 class UserModel(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(255), unique=True, index=True, nullable=False)
-    password = Column(String(255), nullable=False)
+    rut = Column(String(12), unique=True, nullable=False, index=True) 
+    name = Column(String(190), unique=True, nullable=False, index=True) 
+    email = Column(String(190), unique=True, nullable=False, index=True)
+    password = Column(String(255), nullable=False) 
     is_active = Column(Boolean, nullable=False, server_default="1")
+    role = Column(String(20), nullable=False, server_default="viewer")
     created_at = Column(DateTime, server_default=func.current_timestamp())
-    
 
 class StrategicPlanModel(Base):
     __tablename__ = "strategic_plans"
@@ -312,7 +419,7 @@ class StrategicPlanModel(Base):
         back_populates="plan",
         cascade="all, delete-orphan"
     )
-
+#recursos
 class StrategicResourceModel(Base):
     __tablename__ = "plan_resources"
 
@@ -341,22 +448,6 @@ class StrategicResourceModel(Base):
     monto_total              = Column(Integer, nullable=True, default=0)
 
     plan = relationship("StrategicPlanModel", back_populates="resources")
-
-
-# ---- DB Dependency ----
-
-from typing import Generator
-
-def get_db() -> Generator[Session, None, None]:
-    db = SessionLocal()
-    try:
-        yield db
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
-    finally:
-        db.close()
 
 
 # ---- Converters (ORM -> Pydantic) ----
@@ -464,28 +555,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
-
-# Función para obtener el usuario actual (útil para proteger otras rutas)
-def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)) -> UserModel:
-    credentials_exception = HTTPException(
-        status_code=401,
-        detail="No se pudieron validar las credenciales",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        token_data = TokenData(username=username)
-    except JWTError:
-        raise credentials_exception
-        
-    user = db.execute(select(UserModel).where(UserModel.username == token_data.username)).scalar_one_or_none()
-    
-    if user is None:
-        raise credentials_exception
-    return user
 
 
 # ---- Routes ----
@@ -720,30 +789,43 @@ def delete_evidence(evidence_id: int, db: Session = Depends(get_db)):
 #login
 @app.post("/auth/login", response_model=Token)
 def login_for_access_token(
-    credentials: UserLogin, 
+    form_data: OAuth2PasswordRequestForm = Depends(), 
     db: Session = Depends(get_db)
 ):
     """Endpoint para autenticar al usuario y generar un token JWT."""
-    user = db.execute(select(UserModel).where(UserModel.username == credentials.username)).scalar_one_or_none()
+    user = db.execute(select(UserModel).where(UserModel.name == form_data.username)).scalar_one_or_none()
     
-    if not user:
-        raise HTTPException(status_code=400, detail="Credenciales inválidas")
-        
-    if not verify_password(credentials.password, user.password):
-        raise HTTPException(status_code=400, detail="Credenciales inválidas")
-
+    if not user or not verify_password(form_data.password, user.password):
+        raise HTTPException(
+            status_code=400,
+            detail="Credenciales inválidas",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    token_payload = {
+        "sub": user.name,
+        "role": user.role
+    }
+
     access_token = create_access_token(
-        data={"sub": user.username}, 
-        expires_delta=access_token_expires
+        token_payload, expires_delta=access_token_expires
     )
     
     return {"access_token": access_token, "token_type": "bearer"}
 
 
+# ==============================
 # Strategic Plans API
+# ==============================
+# Crear plan (solo editor)
 @app.post("/plans", response_model=StrategicPlan, status_code=201)
-def create_plan(payload: StrategicPlanCreate, db: Session = Depends(get_db)):
+def create_plan(
+    payload: StrategicPlanCreate, 
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(require_role("editor")), # <- aquí
+):
     m = StrategicPlanModel(
         dimension=payload.dimension.value,
         colegio=payload.colegio,
@@ -768,6 +850,8 @@ def list_plans(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
+    # si quieres requerir login incluso para ver, descomenta:
+    # _: UserModel = Depends(get_current_user),
 ):
     stmt = select(StrategicPlanModel).order_by(StrategicPlanModel.id)
     if dimension:
@@ -777,12 +861,12 @@ def list_plans(
     rows = db.execute(stmt.offset(skip).limit(limit)).scalars().all()
     return [plan_to_pydantic(r) for r in rows]
 
-# --- RUTA FIJA ANTES DE LAS PARAMÉTRICAS ---
+# Catálogo de dimensiones (solo lectura)
 @app.get("/plans/dimensions", response_model=List[str])
 def list_dimensions():
     return [d.value for d in DimensionEnum]
 
-# --- RUTAS CON PARÁMETRO (UNA SOLA VEZ) ---
+# Obtener un plan (solo lectura)
 @app.get("/plans/{plan_id}", response_model=StrategicPlan)
 def get_plan(plan_id: int, db: Session = Depends(get_db)):
     m = db.get(StrategicPlanModel, plan_id)
@@ -790,17 +874,27 @@ def get_plan(plan_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Plan no encontrado")
     return plan_to_pydantic(m)
 
+# Eliminar plan (solo editor)
 @app.delete("/plans/{plan_id}", status_code=204)
-def delete_plan(plan_id: int, db: Session = Depends(get_db)):
+def delete_plan(
+    plan_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(require_role("editor")),  # <- aquí
+):
     m = db.get(StrategicPlanModel, plan_id)
     if not m:
         raise HTTPException(status_code=404, detail="Plan no encontrado")
     db.delete(m)
     return Response(status_code=204)
 
-
+# Crear recursos (solo editor)
 @app.post("/plans/{plan_id}/resources", response_model=StrategicResource, status_code=201)
-def create_resource(plan_id: int, payload: StrategicResourceCreate, db: Session = Depends(get_db)):
+def create_resource(
+    plan_id: int,
+    payload: StrategicResourceCreate,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(require_role("editor")),  # <- aquí
+):
     plan = db.get(StrategicPlanModel, plan_id)
     if not plan:
         raise HTTPException(status_code=404, detail="Plan no encontrado")
@@ -826,15 +920,20 @@ def create_resource(plan_id: int, payload: StrategicResourceCreate, db: Session 
     db.flush()
     return Resource_to_pydantic(m)
 
+
+# Listar recursos de un plan (lectura)
 @app.get("/plans/{plan_id}/resources", response_model=List[StrategicResource])
 def list_resources(plan_id: int, db: Session = Depends(get_db)):
-    if not db.get(StrategicPlanModel, plan_id):
-        raise HTTPException(status_code=404, detail="Plan no encontrado")
     rows = db.execute(select(StrategicResourceModel).where(StrategicResourceModel.plan_id==plan_id)).scalars().all()
     return [Resource_to_pydantic(r) for r in rows]
 
+# Eliminar recurso (solo editor)
 @app.delete("/resources/{resource_id}", status_code=204)
-def delete_resource(resource_id: int, db: Session = Depends(get_db)):
+def delete_resource(
+    resource_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(require_role("editor")),  # <- aquí
+):
     m = db.get(StrategicResourceModel, resource_id)
     if not m:
         raise HTTPException(status_code=404, detail="Recurso no encontrado")

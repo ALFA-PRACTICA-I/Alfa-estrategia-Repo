@@ -94,6 +94,30 @@ function pintarBarras(items) {
   });
 }
 
+// ====== Roles desde JWT/localStorage ======
+function getTokenPayload() {
+  const t = localStorage.getItem('token');
+  if (!t) return null;
+  const parts = t.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const json = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+function getRole() {
+  // Preferimos 'role' en el JWT; fallback a 'roles/scopes' o localStorage
+  const p = getTokenPayload() || {};
+  return p.role || (Array.isArray(p.roles) && p.roles[0]) ||
+         (Array.isArray(p.scopes) && (p.scopes.includes('editor') ? 'editor' : (p.scopes.includes('viewer') ? 'viewer' : null))) ||
+         localStorage.getItem('role') || null;
+}
+function isEditor() {
+  return getRole() === 'editor';
+}
+
 // ====== Helpers SPA y API ======
 const API    = "http://127.0.0.1:8000";
 const $view  = document.getElementById('view');
@@ -142,6 +166,21 @@ function tituloDimension(dim) {
   }
 }
 
+// Vista 403
+function showForbidden(msg = 'No tienes permisos para acceder a esta sección.') {
+  $title.textContent = 'Acceso restringido';
+  $view.innerHTML = `
+    <section class="card card--full">
+      <header class="card__header"><h2>403 — Acceso restringido</h2></header>
+      <div class="card__body">
+        <p>${esc(msg)}</p>
+        <button class="btn" id="goDash">Ir al Dashboard</button>
+      </div>
+    </section>
+  `;
+  document.getElementById('goDash')?.addEventListener('click', () => { location.hash = '#/dashboard'; });
+}
+
 // ====== Cache y obtención de planes por dimensión ======
 const plansCache = new Map(); // dimension -> { list:Array, groups:Map(objetivo->Array) }
 window.invalidatePlansCache = (dim) => dim ? plansCache.delete(dim) : plansCache.clear();
@@ -153,6 +192,7 @@ async function getPlansByDimension(dimensionValue) {
     headers: { ...authHeaders() }
   });
   if (res.status === 401) { window.location.href = 'login.html'; return { list: [], groups: new Map() }; }
+  if (res.status === 403) { showForbidden(); return { list: [], groups: new Map() }; }
 
   const list = await res.json();
   // Agrupa por objetivo 
@@ -205,12 +245,25 @@ async function showDashboard() {
 }
 
 async function showPlanForm() {
+  // Guardia de rol
+  if (!isEditor()) {
+    showForbidden('Solo los editores pueden crear/editar planes.');
+    return;
+  }
   $title.textContent = 'Formulario de Planes Estratégicos';
   const html = await loadHTML('plan_form.html');
   $view.innerHTML = html;
   await loadScriptOnce('js/plan_form.js');
   if (window.initPlanForm) window.initPlanForm();
 }
+
+
+// Filtros
+const currentFilters = {
+    sort: 'objetivo-asc', 
+    colegio: 'TODOS',
+    subdimension: 'TODOS',
+};
 
 // ====== Vista 1: listado de objetivos (primer paso) ======
 async function showPlanList(dimensionValue) {
@@ -219,7 +272,7 @@ async function showPlanList(dimensionValue) {
     <section class="card card--full">
       <header class="card__header" style="display:flex;justify-content:space-between;align-items:center;">
         <h2 style="margin:0;">${tituloDimension(dimensionValue)}</h2>
-        <button id="btnRefrescar" class="btn">Refrescar</button>
+          <button id="btnRefrescar" class="btn">Refrescar</button>
       </header>
       <div class="card__body" id="plansList">Cargando…</div>
     </section>
@@ -246,7 +299,7 @@ async function showPlanList(dimensionValue) {
         <div class="obj-item__actions">
           <button class="btn btn--sm" data-act="ver" data-obj="${oEnc}">Ir al objetivo</button>
           <button class="btn btn--sm" data-act="rec" data-obj="${oEnc}">Recursos del objetivo</button>
-          <button class="btn btn--sm" data-act="ver" data-obj="${oEnc}">Evidencias</button>
+          <button class="btn btn--sm" data-act="evi" data-obj="${oEnc}">Evidencia</button>
           <span class="obj-item__meta">${items.length} acción(es)</span>
         </div>
       </li>
@@ -261,6 +314,7 @@ async function showPlanList(dimensionValue) {
     const objetivo = decodeURIComponent(btn.dataset.obj || '');
     if (btn.dataset.act === 'ver')  showObjectiveDetail(dimensionValue, objetivo);
     if (btn.dataset.act === 'rec')  showObjectiveResources(dimensionValue, objetivo);
+    if (btn.dataset.act === 'evi')  showEvidenceUpload(dimensionValue, objetivo);
   });
 
   document.getElementById('btnRefrescar')?.addEventListener('click', () => {
@@ -279,9 +333,15 @@ async function showObjectiveDetail(dimensionValue, objetivo) {
   $view.innerHTML = `
     <section class="card card--full">
       <header class="card__header" style="display:flex;gap:.5rem;align-items:center;">
+        <button id="btnFiltros" class="btn btn--secondary">Filtrar / Ordenar</button>
         <button class="btn btn--ghost" id="btnVolver">← Volver</button>
         <h2 style="margin:0;">${esc(objetivo)}</h2>
       </header>
+
+      <div id="filterArea" class="filter-area" style="display:none; padding:15px; border-bottom: 1px solid var(--border-color);">
+          <p>Contenido del filtro para acciones...</p> 
+      </div>
+
       <div class="card__body">
         <div class="table-wrap">
           <table class="plan-table">
@@ -317,20 +377,257 @@ async function showObjectiveDetail(dimensionValue, objetivo) {
       </div>
     </section>
   `;
+  //Llamado filtro boton de objetivos 
+  const $filterBtn = document.getElementById('btnFiltros');
+  const $filterArea = document.getElementById('filterArea');
+
+  $filterBtn?.addEventListener('click', () => {
+    const isVisible = $filterArea.style.display === 'flex';
+    $filterArea.style.display = isVisible ? 'none' : 'flex';
+    $filterBtn.textContent = isVisible ? 'Filtrar / Ordenar' : 'Ocultar Filtros';
+  });
+
   document.getElementById('btnVolver')?.addEventListener('click', () => showPlanList(dimensionValue));
 }
 
-// recursos asociados a un objetivo
+const DB_NAME = 'evidenciasDB';
+const DB_STORE = 'files';
+
+function idbOpen() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(DB_STORE)) {
+        const store = db.createObjectStore(DB_STORE, { keyPath: 'id', autoIncrement: true });
+        store.createIndex('byObjetivo', 'objetivo', { unique: false });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbAdd(fileRec) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).add(fileRec);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function idbListByObjetivo(objetivo) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, 'readonly');
+    const idx = tx.objectStore(DB_STORE).index('byObjetivo');
+    const req = idx.getAll(IDBKeyRange.only(objetivo));
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbDelete(id) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).delete(id);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// --- File System Access API (opcional) ---
+let evidencesDirHandle = null;
+
+async function chooseLocalFolder() {
+  if (!window.showDirectoryPicker) {
+    alert('Tu navegador no soporta elegir carpeta. Se usará almacenamiento interno (IndexedDB).');
+    return null;
+  }
+  evidencesDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+  const perm = await evidencesDirHandle.requestPermission({ mode: 'readwrite' });
+  if (perm !== 'granted') evidencesDirHandle = null;
+  return evidencesDirHandle;
+}
+
+async function saveToFolder(file) {
+  if (!evidencesDirHandle) return false;
+  const safeName = file.name.replace(/[/\\?%*:|"<>]/g, '_');
+  const fh = await evidencesDirHandle.getFileHandle(safeName, { create: true });
+  const writable = await fh.createWritable();
+  await writable.write(file);
+  await writable.close();
+  return true;
+}
+
+const ACCEPT_EXT = [
+  '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+  '.png', '.jpg', '.jpeg'
+].join(',');
+
+function fileIcon(type, name) {
+  const n = (name || '').toLowerCase();
+  if (n.endsWith('.pdf')) return '📄 PDF';
+  if (n.endsWith('.doc') || n.endsWith('.docx')) return '📝 DOC';
+  if (n.endsWith('.xls') || n.endsWith('.xlsx')) return '📊 XLS';
+  if (n.endsWith('.ppt') || n.endsWith('.pptx')) return '📈 PPT';
+  if (type.startsWith('image/')) return '🖼️ IMG';
+  return '📁 FILE';
+}
+
+function fmtSize(bytes) {
+  if (!Number.isFinite(bytes)) return '—';
+  const u = ['B','KB','MB','GB'];
+  let i=0, n=bytes;
+  while (n >= 1024 && i < u.length-1) { n/=1024; i++; }
+  return `${n.toFixed(1)} ${u[i]}`;
+}
+
+async function showEvidenceUpload(dimensionValue, objetivo) {
+  $title.textContent = `${tituloDimension(dimensionValue)} — Evidencias`;
+  $view.innerHTML = `
+    <section class="card card--full">
+      <header class="card__header" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn--ghost" id="btnBack">← Volver</button>
+        <h2 style="margin:0;">Evidencias — ${esc(objetivo)}</h2>
+        <div style="margin-left:auto;display:flex;gap:.5rem;">
+          <button class="btn btn--ghost" id="btnChooseFolder">Elegir carpeta del PC (opcional)</button>
+        </div>
+      </header>
+      <div class="card__body">
+        <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
+          <input id="fileInput" type="file" accept="${ACCEPT_EXT}" multiple />
+          <button class="btn" id="btnUpload">Subir</button>
+          <small>Formatos permitidos: PDF, DOC(X), XLS(X), PPT(X), PNG/JPG</small>
+        </div>
+        <hr/>
+        <div class="table-wrap">
+          <table class="plan-table">
+            <thead>
+              <tr>
+                <th>Archivo</th>
+                <th>Tamaño</th>
+                <th>Tipo</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbFiles"><tr><td colspan="5">Cargando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  `;
+
+  document.getElementById('btnBack')?.addEventListener('click', () => showPlanList(dimensionValue));
+
+  document.getElementById('btnChooseFolder')?.addEventListener('click', async () => {
+    await chooseLocalFolder();
+    alert(evidencesDirHandle ? 'Carpeta lista. Los archivos también se guardarán ahí.' : 'No se pudo usar carpeta; se seguirá usando almacenamiento interno.');
+  });
+
+  async function refreshList() {
+    const rows = await idbListByObjetivo(objetivo);
+    const tb = document.getElementById('tbFiles');
+    if (!rows.length) {
+      tb.innerHTML = `<tr><td colspan="5">Aún no hay evidencias para este objetivo.</td></tr>`;
+      return;
+    }
+    tb.innerHTML = rows.map(r => {
+      const when = new Date(r.createdAt || Date.now()).toLocaleString('es-CL');
+      return `
+        <tr data-id="${r.id}">
+          <td>${fileIcon(r.type, r.name)} — ${esc(r.name)}</td>
+          <td>${fmtSize(r.size)}</td>
+          <td>${esc(r.type || '—')}</td>
+          <td>${when}</td>
+          <td>
+            <button class="btn btn--sm" data-act="dl">Descargar</button>
+            <button class="btn btn--sm btn--ghost" data-act="del">Eliminar</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  document.getElementById('btnUpload')?.addEventListener('click', async () => {
+    const inp = document.getElementById('fileInput');
+    if (!inp.files || !inp.files.length) {
+      alert('Selecciona uno o más archivos primero.');
+      return;
+    }
+
+    for (const file of inp.files) {
+      // 1) Guardar opcionalmente en carpeta física
+      let savedToFS = false;
+      try { savedToFS = await saveToFolder(file); } catch (_) {}
+
+      // 2) Siempre guardamos una copia en IndexedDB
+      const blob = new Blob([await file.arrayBuffer()], { type: file.type || 'application/octet-stream' });
+      await idbAdd({
+        objetivo,
+        dimension: dimensionValue,
+        name: file.name,
+        size: file.size,
+        type: file.type || '',
+        createdAt: Date.now(),
+        blob
+      });
+    }
+
+    alert('Evidencia(s) guardada(s).');
+    await refreshList();
+    document.getElementById('fileInput').value = '';
+  });
+
+  // acciones tabla
+  document.getElementById('tbFiles')?.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const tr = btn.closest('tr[data-id]');
+    const id = Number(tr?.dataset.id);
+
+    if (btn.dataset.act === 'del') {
+      if (confirm('¿Eliminar esta evidencia local?')) {
+        await idbDelete(id);
+        await refreshList();
+      }
+      return;
+    }
+
+    if (btn.dataset.act === 'dl') {
+      const rows = await idbListByObjetivo(objetivo);
+      const rec = rows.find(r => r.id === id);
+      if (!rec) return;
+      const url = URL.createObjectURL(rec.blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = rec.name || 'evidencia';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+  });
+
+  await refreshList();
+}
+
+
+// ====== Vista 3: recursos por objetivo ======
 async function showObjectiveResources(dimensionValue, objetivo) {
   const { groups } = await getPlansByDimension(dimensionValue);
   const plans = (groups.get(objetivo) || []).slice()
     .sort((a, b) => (a.fecha_inicio || '').localeCompare(b.fecha_inicio || ''));
 
-  // Traer recursos por cada plan
+  // Trae recursos de cada plan
   const lists = await Promise.all(
     plans.map(p =>
       fetch(`${API}/plans/${p.id}/resources`, { headers: { ...authHeaders() } })
-        .then(r => r.ok ? r.json() : [])
+        .then(r => (r.status === 403 ? (showForbidden(), []) : (r.ok ? r.json() : [])))
         .catch(() => [])
     )
   );
@@ -357,9 +654,14 @@ async function showObjectiveResources(dimensionValue, objetivo) {
   $view.innerHTML = `
     <section class="card card--full">
       <header class="card__header" style="display:flex;gap:.5rem;align-items:center;">
+        <button id="btnFiltrosRecursos" class="btn btn--secondary">Filtrar / Ordenar</button>
         <button class="btn btn--ghost" id="btnVolver">← Volver</button>
         <h2 style="margin:0;">Recursos — ${esc(objetivo)}</h2>
       </header>
+
+      <div id="filterAreaRecursos" class="filter-area" style="display:none; padding:15px; border-bottom: 1px solid var(--border-color);">
+          <p>Contenido del filtro para recursos...</p>
+      </div>
 
       <div class="card__body table-wrap">
         <div class="scroll-btns">
@@ -410,7 +712,7 @@ async function showObjectiveResources(dimensionValue, objetivo) {
   if (!rows.length) {
     $tb.innerHTML = `<tr><td colspan="16">Sin datos de recursos para este objetivo.</td></tr>`;
   } else {
-    $tb.innerHTML = rows.map(({ plan, res }) => `
+    $tb.innerHTML = rows.map(({ res }) => `
       <tr>
         <td>${esc(txt(res?.recursos_necesarios))}</td>
         <td>${esc(txt(res?.ate))}</td>
@@ -441,6 +743,17 @@ async function showObjectiveResources(dimensionValue, objetivo) {
       const dir  = Number(b.dataset.dir);
       wrap.scrollBy({ left: step * dir, behavior: 'smooth' });
     });
+  });
+
+
+  //Llamado filtrar boton recursos 
+  const $filterBtnRecursos = document.getElementById('btnFiltrosRecursos');
+  const $filterAreaRecursos = document.getElementById('filterAreaRecursos');
+
+  $filterBtnRecursos?.addEventListener('click', () => {
+    const isVisible = $filterAreaRecursos.style.display === 'flex';
+    $filterAreaRecursos.style.display = isVisible ? 'none' : 'flex';
+    $filterBtnRecursos.textContent = isVisible ? 'Filtrar / Ordenar' : 'Ocultar Filtros';
   });
 
   document.getElementById('btnVolver')?.addEventListener('click', () => showPlanList(dimensionValue));
@@ -515,7 +828,6 @@ function setupAccordionTransition() {
   });
 }
 
-
 // ====== Router por hash ======
 async function router() {
   const hash = location.hash || '#/dashboard';
@@ -523,20 +835,32 @@ async function router() {
 
   if (hash === '#/dashboard')          return showDashboard();
   if (hash === '#/reportes')           return showReportes();
-  if (hash === '#/planes/form')        return showPlanForm();
+  if (hash === '#/planes/form')        return isEditor() ? showPlanForm() : showForbidden('Solo los editores pueden crear/editar planes.');
   if (hash === '#/planes/liderazgo')   return showPlanList('LIDERAZGO');
   if (hash === '#/planes/gestion')     return showPlanList('GESTION_PEDAGOGICA');
   if (hash === '#/planes/convivencia') return showPlanList('CONVIVENCIA_ESCOLAR');
   if (hash === '#/planes/recursos')    return showPlanList('GESTION_RECURSOS');
-
-
-  // fallback
+  
   return showDashboard();
 }
+
 window.addEventListener('hashchange', router);
-window.addEventListener('DOMContentLoaded', router);
+window.addEventListener('DOMContentLoaded', () => {
+  // Oculta el menú del formulario si no es editor
+  const liForm = document.querySelector('#nav-plan-form')?.closest('.nav__item, li, a');
+  if (liForm && !isEditor()) liForm.style.display = 'none';
+  router();
+});
 window.addEventListener('DOMContentLoaded', setupAccordionTransition);
 
 // (opcional) listeners directos si tienes botones con IDs:
 document.getElementById('nav-dashboard')?.addEventListener('click', e => { e.preventDefault(); location.hash = '#/dashboard'; });
 document.getElementById('nav-plan-form')?.addEventListener('click', e => { e.preventDefault(); location.hash = '#/planes/form'; });
+
+document.querySelectorAll('.nav__details').forEach(d => {
+  d.addEventListener('toggle', () => {
+    if (d.open) {
+      document.querySelectorAll('.nav__details').forEach(o => { if (o !== d) o.open = false; });
+    }
+  });
+});
